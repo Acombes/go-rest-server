@@ -1,21 +1,26 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
 	FILE string
-	mux  http.ServeMux
 )
 
 func init() {
+	if len(os.Args) < 1 {
+		return
+	}
 
+	FILE = os.Args[1]
 }
 
 func check(e error) {
@@ -24,64 +29,82 @@ func check(e error) {
 	}
 }
 
+// Recover JSON from the loaded file
 func readFromFile() map[string]interface{} {
-	var jsonData interface{}
-	b, err := ioutil.ReadFile(FILE)
+	fileBytes, err := ioutil.ReadFile(FILE)
+	if err != nil {
+		fmt.Println("File could not be found: ", FILE)
+		os.Exit(1)
+	}
+	return decodeJSON(string(fileBytes)).(map[string]interface{})
+}
 
-	check(err)
+func encodeJSON(elem interface{}) string {
+	var output = new(bytes.Buffer)
 
-	json.Unmarshal(b, &jsonData)
+	encoder := json.NewEncoder(output)
 
-	return jsonData.(map[string]interface{})
+	encoder.Encode(elem)
+
+	return output.String()
+}
+
+func decodeJSON(str string) interface{} {
+	var (
+		output interface{}
+		err    error
+	)
+	decoder := json.NewDecoder(strings.NewReader(str))
+
+	for decoder.More() {
+		err = decoder.Decode(&output)
+		check(err)
+	}
+
+	return output
 }
 
 func getNewHandler(basePath string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var jsonData = readFromFile()[basePath].([]interface{})
 
-		for i, u := range jsonData {
-			fmt.Fprintln(w, i, u)
-		}
-
-		fmt.Fprintln(w, ...)
+		w.Header().Set("Content-type", "application/json")
+		fmt.Fprint(w, encodeJSON(jsonData))
 	}
 }
 
 func main() {
-	if len(os.Args) < 1 {
-		return
-	}
-
-	FILE = os.Args[1]
-
+	// Recover the data from the file to build the API
 	jsonData := readFromFile()
 
+	// For each root key, expose a URL path
 	for key, value := range jsonData {
-		fmt.Println(key)
 		switch value.(type) {
 		case []interface{}:
-			http.HandleFunc("/"+key, getNewHandler(key))
+			http.HandleFunc("/"+key+"/", getNewHandler(key))
 		}
 	}
 
-	/*	http.HandleFunc("/plop", func(w http.ResponseWriter, r *http.Request) {
-			var jsonData = readFromFile()
-			for k, v := range jsonData {
-				switch vv := v.(type) {
-				case string:
-					fmt.Fprintln(w, k, "is string", vv)
-				case float64:
-					fmt.Fprintln(w, k, "is float64", vv)
-				case []interface{}:
-					fmt.Fprintln(w, k, "is an array:")
-					for i, u := range vv {
-						fmt.Fprintln(w, i, u)
-					}
-				default:
-					fmt.Fprintln(w, k, "is of a type I don't know how to handle: ", vv)
+	// Test URL path
+	http.HandleFunc("/test/", func(w http.ResponseWriter, r *http.Request) {
+		var jsonData = readFromFile()
+		for k, v := range jsonData {
+			switch vv := v.(type) {
+			case string:
+				fmt.Fprintln(w, k, "is string", vv)
+			case float64:
+				fmt.Fprintln(w, k, "is float64", vv)
+			case []interface{}:
+				fmt.Fprintln(w, k, "is an array:")
+				for i, u := range vv {
+					fmt.Fprintln(w, i, u)
 				}
+			default:
+				fmt.Fprintln(w, k, "is of a type I don't know how to handle: ", vv)
 			}
-		})
-	*/
+		}
+	})
+
+	// Set up the server
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
