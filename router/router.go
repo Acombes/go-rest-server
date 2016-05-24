@@ -16,6 +16,7 @@ func MakeRoutes(readFromFile func() (map[string]interface{}, error)) {
 	jsonData, err := readFromFile()
 	utils.CheckError(err)
 
+	// Greet the user and show the resources available to them
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		var jsonData, err = readFromFile()
 		if !utils.CheckError(err) {
@@ -34,16 +35,18 @@ func MakeRoutes(readFromFile func() (map[string]interface{}, error)) {
 		stick.NewEnv(stick.NewFilesystemLoader(".")).Execute("listing.twig", w, map[string]stick.Value{"roots": tmp})
 	})
 
+	// Serve the static files, such as the stylesheets, scripts, etc.
 	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 		replacer := strings.NewReplacer("/static", "static")
+		splittedPath := strings.Split(r.URL.Path, ".")
 
-		w.Header().Set("Content-type", "text/css")
+		w.Header().Set("Content-type", utils.GetMime(splittedPath[len(splittedPath)-1]))
 
-		str := replacer.Replace(r.URL.Path)
-		fmt.Println(str)
-		http.ServeFile(w, r, str)
+		filePath := replacer.Replace(r.URL.Path)
+		http.ServeFile(w, r, filePath)
 	})
 
+	// Show the entire database
 	http.HandleFunc("/db/", func(w http.ResponseWriter, r *http.Request) {
 		var jsonData, err = readFromFile()
 		if !utils.CheckError(err) {
@@ -87,5 +90,5 @@ func getNewPathHandler(basePath string, readFromFile func() (map[string]interfac
 }
 
 func prepareJSONResponse(w *http.ResponseWriter) {
-	(*w).Header().Set("Content-type", "application/json")
+	(*w).Header().Set("Content-type", utils.GetMime("json"))
 }
