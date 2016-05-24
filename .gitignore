@@ -1,8 +1,5 @@
-# Ignore everything
-*
+# Ignore the log file
+go-rest-server-log
 
-# Except .go files
-!*.go
-
-# ...even if they are in subdirectories
-!*/
+# Ignore the built executables
+*.exe

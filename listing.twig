@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="//netdna.bootstrapcdn.com/bootswatch/3.1.1/flatly/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="static/stylesheets/style.css">
+</head>
+<body>
+
+	<div class="container">
+		<hr>
+		<p>
+			<em>
+				Congrats! You're successfully running JSON Server.
+			</em>
+		</p>
+		<hr>
+
+		<h4>Routes</h4>
+		<p>Here are the resources that JSON Server has loaded:</p>
+		<p>
+			<ul>
+				{% for item in roots %}
+				<li><a href="{{item}}">{{item}}</a></li>
+				{% endfor %}
+			</ul>
+		</p>
+
+		<p>
+			You can view database current state at any time:
+			<ul>
+				<li><a href="db">db</a></li>
+			</ul>
+		</p>
+	</div>
+
+
+
+
+</body>
+</html>
