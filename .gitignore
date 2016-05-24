@@ -1,2 +1,8 @@
-# Ignore generated logfile
-go-rest-server-log
+# Ignore everything
+*
+
+# Except .go files
+!*.go
+
+# ...even if they are in subdirectories
+!*/
