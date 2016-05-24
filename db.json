@@ -2,23 +2,28 @@
   "comments": [
     {
       "author": "Pete Hunt",
-      "text": "This is one comment"
+      "text": "This is one comment",
+      "id": 1
     },
     {
       "author": "Claire Bonnichon",
-      "text": "This is a **REALLY** nice comment"
+      "text": "This is a **REALLY** nice comment",
+      "id": 2
     },
     {
       "author": "Jordan Walke",
-      "text": "This is *another* comment"
+      "text": "This is *another* comment",
+      "id": 3
     },
     {
       "author": "Antoine COMBES",
-      "text": "J'apprends ReactJS et c'est plutôt cool !"
+      "text": "J'apprends ReactJS et c'est plutôt cool !",
+      "id": 4
     },
     {
       "author": "Bugs Bunny",
-      "text": "quoi d'neuf docteur ?"
+      "text": "quoi d'neuf docteur ?",
+      "id": 5
     }
   ],
   "products": [
@@ -26,37 +31,43 @@
       "category": "Sporting Goods",
       "price": "$49.99",
       "stocked": true,
-      "name": "Football"
+      "name": "Football",
+      "id": 1
     },
     {
       "category": "Sporting Goods",
       "price": "$9.99",
       "stocked": true,
-      "name": "Baseball"
+      "name": "Baseball",
+      "id": 2
     },
     {
       "category": "Sporting Goods",
       "price": "$29.99",
       "stocked": false,
-      "name": "Basketball"
+      "name": "Basketball",
+      "id": 3
     },
     {
       "category": "Electronics",
       "price": "$99.99",
       "stocked": true,
-      "name": "iPod Touch"
+      "name": "iPod Touch",
+      "id": 4
     },
     {
       "category": "Electronics",
       "price": "$399.99",
       "stocked": false,
-      "name": "iPhone 5"
+      "name": "iPhone 5",
+      "id": 5
     },
     {
       "category": "Electronics",
       "price": "$199.99",
       "stocked": true,
-      "name": "Nexus 7"
+      "name": "Nexus 7",
+      "id": 6
     }
   ]
 }
