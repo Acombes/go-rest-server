@@ -13,8 +13,9 @@ var (
 )
 
 func init() {
-	if len(os.Args) < 1 {
-		return
+	if len(os.Args) < 2 {
+		fmt.Println("No source file given...\n\n\n")
+		os.Exit(1)
 	}
 
 	FILE = os.Args[1]
