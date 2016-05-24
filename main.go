@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,7 +13,9 @@ import (
 )
 
 var (
-	FILE string
+	FILE             string
+	logFileName      = "go-rest-server-log"
+	iLog, eLog, wLog *log.Logger
 )
 
 func init() {
@@ -21,22 +24,36 @@ func init() {
 	}
 
 	FILE = os.Args[1]
+
+	// Initialize the logfile
+	logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+
+	iLog = log.New(logFile, "         ", log.Ldate|log.Ltime)
+	eLog = log.New(logFile, "ERROR:   ", log.Ldate|log.Ltime)
+	wLog = log.New(logFile, "Warning: ", log.Ldate|log.Ltime)
+
+	log.SetOutput(logFile)
 }
 
-func check(e error) {
+func checkError(e error) bool {
 	if e != nil {
-		panic(e)
+		eLog.Println(e)
 	}
+
+	return e == nil
 }
 
 // Recover JSON from the loaded file
-func readFromFile() map[string]interface{} {
+func readFromFile() (map[string]interface{}, error) {
 	fileBytes, err := ioutil.ReadFile(FILE)
 	if err != nil {
-		fmt.Println("File could not be found: ", FILE)
-		os.Exit(1)
+		return nil, errors.New(fmt.Sprintf("File could not be found: %v", FILE))
 	}
-	return decodeJSON(string(fileBytes)).(map[string]interface{})
+	return decodeJSON(string(fileBytes)).(map[string]interface{}), nil
 }
 
 func encodeJSON(elem interface{}) string {
@@ -50,15 +67,12 @@ func encodeJSON(elem interface{}) string {
 }
 
 func decodeJSON(str string) interface{} {
-	var (
-		output interface{}
-		err    error
-	)
+	var output interface{}
 	decoder := json.NewDecoder(strings.NewReader(str))
 
 	for decoder.More() {
-		err = decoder.Decode(&output)
-		check(err)
+		err := decoder.Decode(&output)
+		checkError(err)
 	}
 
 	return output
@@ -66,16 +80,24 @@ func decodeJSON(str string) interface{} {
 
 func getNewHandler(basePath string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var jsonData = readFromFile()[basePath].([]interface{})
+		jsonData, err := readFromFile()
 
-		w.Header().Set("Content-type", "application/json")
-		fmt.Fprint(w, encodeJSON(jsonData))
+		if checkError(err) {
+			dataBit := jsonData[basePath].([]interface{})
+			iLog.Printf("Call to /%s/ - %d results\n", basePath, len(dataBit))
+			w.Header().Set("Content-type", "application/json")
+			fmt.Fprint(w, encodeJSON(dataBit))
+		} else {
+			// TODO : 500 error does not work
+			http.Error(w, "Data source file could not be found", http.StatusInternalServerError)
+		}
 	}
 }
 
 func main() {
 	// Recover the data from the file to build the API
-	jsonData := readFromFile()
+	jsonData, err := readFromFile()
+	checkError(err)
 
 	// For each root key, expose a URL path
 	for key, value := range jsonData {
@@ -87,7 +109,9 @@ func main() {
 
 	// Test URL path
 	http.HandleFunc("/test/", func(w http.ResponseWriter, r *http.Request) {
-		var jsonData = readFromFile()
+		var jsonData, err = readFromFile()
+		checkError(err)
+
 		for k, v := range jsonData {
 			switch vv := v.(type) {
 			case string:
@@ -106,5 +130,6 @@ func main() {
 	})
 
 	// Set up the server
+	iLog.Println("Server startup")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
